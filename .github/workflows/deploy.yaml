@@ -1,0 +1,115 @@
+name: Deploy Node.js Express App
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: npm install --production
+
+      - name: Sync and Configure
+        run: |
+          # 1️⃣ Define Port with Fallback
+          APP_PORT="${{ secrets.PORT }}"
+          if [ -z "$APP_PORT" ]; then
+            APP_PORT=5000
+          fi
+
+          # 2️⃣ Prepare Directory & Sync
+          sudo mkdir -p /var/www/backend/folder
+          sudo rsync -avz --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.env*' \
+            . /var/www/backend/folder/
+
+          # 3️⃣ Set Ownership to the current user (runner)
+          sudo chown -R $USER:$USER /var/www/backend/folder
+          sudo chmod -R 755 /var/www/backend/folder
+
+          # 4️⃣ Inject GitHub Secrets into .env
+          cd /var/www/backend/folder
+          cat <<EOF > .env
+          PORT=$APP_PORT
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+          ACCESS_TOKEN_EXPIRY=${{ secrets.ACCESS_TOKEN_EXPIRY }}
+          ADMIN_RESET_PASSWORD_URL=${{ secrets.ADMIN_RESET_PASSWORD_URL }}
+          #ADMIN_PASS=${{ secrets.ADMIN_PASS }}
+          EMAIL_USER=${{ secrets.EMAIL_USER }}
+          EMAIL_PASS=${{ secrets.EMAIL_PASS }}
+          #JWT_SECRET=${{ secrets.JWT_SECRET }}
+          FACULTY_RESET_PASSWORD_URL=${{ secrets.FACULTY_RESET_PASSWORD_URL }}
+          REVIEWER_LOGIN_URL=${{ secrets.REVIEWER_LOGIN_URL }}
+          REVIEWER_RESET_PASSWORD_URL=${{ secrets.REVIEWER_RESET_PASSWORD_URL }}
+          SUPERADMIN_REGISTRATION_KEY=${{ secrets.SUPERADMIN_REGISTRATION_KEY }}
+          #GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          #REFRESH_TOKEN_EXPIRY=${{ secrets.REFRESH_TOKEN_EXPIRY }}
+          #REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+          # RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}
+          # TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
+          # TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
+          # TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          #SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+          AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
+          EOF
+
+          # 5️⃣ Setup Nginx
+          sudo tee /etc/nginx/sites-available/folder > /dev/null <<EOF
+          server {
+              listen 80;
+              server_name _;
+              location / {
+                  proxy_pass http://localhost:$APP_PORT;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host \$host;
+                  proxy_cache_bypass \$http_upgrade;
+              }
+          }
+          EOF
+
+          sudo ln -sf /etc/nginx/sites-available/folder /etc/nginx/sites-enabled/
+          sudo rm -f /etc/nginx/sites-enabled/default
+          sudo nginx -t && sudo systemctl reload nginx
+
+      - name: PM2 Deployment
+        run: |
+          # 1️⃣ Move to the app directory
+          cd /var/www/backend/folder
+
+          # 2️⃣ Clear any existing process with this name to prevent conflicts
+          # we use || true so the script doesn't fail if the process isn't there
+          pm2 delete Backend || true
+
+          # 3️⃣ Start the app fresh
+          # --update-env ensures the new .env values are loaded
+          pm2 start app.js --name Backend --update-env
+
+          # 2️⃣ Configure Startup Persistence
+          # This specifically extracts the sudo command line from the pm2 startup output
+          STARTUP_CMD=$(pm2 startup | grep "sudo" | sed 's/^[[:space:]]*//')
+          if [ ! -z "$STARTUP_CMD" ]; then
+            eval $STARTUP_CMD
+          fi
+
+          # 4️⃣ Save to ensure persistence after reboot
+          pm2 save
+
+          # 5️⃣ Wait 2 seconds and show status + logs (to catch instant crashes)
+          sleep 2
+          pm2 list
+          pm2 status Backend

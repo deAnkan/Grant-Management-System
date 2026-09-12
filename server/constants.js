@@ -1,0 +1,92 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
+export const constants = {
+    CONTINUE: 100,
+    SWITCHING_PROTOCOLS: 101,
+    EARLY_HINTS: 103,
+    PROCESSING: 102,
+    OK: 200,
+    CREATED: 201,
+    ACCEPTED: 202,
+    NON_AUTHORITATIVE_INFORMATION: 203,
+    NO_CONTENT: 204,
+    RESET_CONTENT: 205,
+    PARTIAL_CONTENT: 206,
+    MULTIPLE_CHOICES: 300,
+    MOVED_PERMANENTLY: 301,
+    FOUND: 302,
+    SEE_OTHER: 303,
+    NOT_MODIFIED: 304,
+    USE_PROXY: 305,
+    TEMPORARY_REDIRECT: 307,
+    PERMANENT_REDIRECT: 308,
+    VALIDATION_ERROR: 400,
+    UNAUTHORIZED: 401,
+    PAYMENT_REQUIRED: 402,
+    FORBIDDEN: 403,
+    NOT_FOUND: 404,
+    METHOD_NOT_ALLOWED: 405,
+    NOT_ACCEPTABLE: 406,
+    PROXY_AUTHENTICATION_REQUIRED: 407,
+    REQUEST_TIMEOUT: 408,
+    CONFLICT: 409,
+    GONE: 410,
+    LENGTH_REQUIRED: 411,
+    PRECONDITION_FAILED: 412,
+    REQUEST_ENTITY_TOO_LARGE: 413,
+    REQUEST_URI_TOO_LONG: 414,
+    UNSUPPORTED_MEDIA_TYPE: 415,
+    REQUESTED_RANGE_NOT_SATISFIABLE: 416,
+    EXPECTATION_FAILED: 417,
+    I_AM_A_TEAPOT: 418,
+    UNPROCESSABLE_ENTITY: 422,
+    LOCKED: 423,
+    FAILED_DEPENDENCY: 424,
+    UPGRADE_REQUIRED: 426,
+    PRECONDITION_REQUIRED: 428,
+    TOO_MANY_REQUESTS: 429,
+    REQUEST_HEADER_FIELDS_TOO_LARGE: 431,
+    UNAVAILABLE_FOR_LEGAL_REASONS: 451,
+    INTERNAL_SERVER_ERROR: 500,
+    NOT_IMPLEMENTED: 501,
+    BAD_GATEWAY: 502,
+    SERVICE_UNAVAILABLE: 503,
+    GATEWAY_TIMEOUT: 504,
+    HTTP_VERSION_NOT_SUPPORTED: 505,
+    INSUFFICIENT_STORAGE: 507,
+    LOOP_DETECTED: 508,
+    NOT_EXTENDED: 510,
+    NETWORK_AUTHENTICATION_REQUIRED: 511,
+};
+  
+export const config = {
+    port: String(process.env.PORT || 8000),
+    uri: String(process.env.MONGODB_URI),
+    accessTokenSecret: String(process.env.ACCESS_TOKEN_SECRET),
+    accessTokenExpiry: String(process.env.ACCESS_TOKEN_EXPIRY),
+    emailUser: String(process.env.EMAIL_USER),
+    emailPass: String(process.env.EMAIL_PASS),
+    mailProvider: String(process.env.MAIL_PROVIDER || "smtp").toLowerCase(),
+
+    resendApiKey: String(process.env.RESEND_API_KEY),
+    resendFromEmail: String(process.env.RESEND_FROM_EMAIL),
+    otpExpiryMinutes: Number(process.env.OTP_EXPIRY_MINUTES || 5),
+    otpHashSecret: String(process.env.OTP_HASH_SECRET),
+
+    reviewerLoginUrl: String(process.env.REVIEWER_LOGIN_URL || "https://grant-in-aid.iem.edu.in/auth/reviewer/login"),
+    adminResetPasswordUrl: String(
+    process.env.ADMIN_RESET_PASSWORD_URL || "http://localhost:5173/auth/superadmin/reset-password"
+    ),
+    facultyResetPasswordUrl: String(
+    process.env.FACULTY_RESET_PASSWORD_URL || "http://localhost:5173/auth/faculty/reset-password/REAL_TOKEN"
+    ),
+    reviewerResetPasswordUrl: String(
+    process.env.REVIEWER_RESET_PASSWORD_URL || "http://localhost:5173/auth/reviewer/reset-password/REAL_TOKEN"
+    ),
+    
+    awsRegion: String(process.env.AWS_REGION),
+    awsAccessKeyId: String(process.env.AWS_ACCESS_KEY_ID),
+    awsSecretAccessKey: String(process.env.AWS_SECRET_ACCESS_KEY),
+    s3BucketName: String(process.env.AWS_S3_BUCKET),
+}   

@@ -1,0 +1,44 @@
+{
+  "name": "iem-uem-grant-in-aid-backend",
+  "version": "1.0.0",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "seed:admin": "node server/scripts/seedAdmin.js",
+    "seed:faculty-csv": "node server/scripts/seedFacultyFromCsv.js",
+    "backfill:application-ids": "node server/jobs/backfillApplicationIds.js",
+    "backfill:application-ids:dry": "node server/jobs/backfillApplicationIds.js --dry-run",
+    "backfill:rejection-notifications": "node server/jobs/backfillRejectionNotifications.js",
+    "backfill:rejection-notifications:dry": "node server/jobs/backfillRejectionNotifications.js --dry-run",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1011.0",
+    "@aws-sdk/lib-storage": "^3.1007.0",
+    "@aws-sdk/s3-request-presigner": "^3.1011.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "crypto": "^1.0.1",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-async-handler": "^1.2.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.4",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
+    "multer-s3": "^3.0.1",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.2",
+    "resend": "^6.18.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
