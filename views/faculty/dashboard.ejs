@@ -2,15 +2,15 @@
 {label:'Dashboard',icon:'layout-dashboard',href:'/faculty/dashboard',active:true},{label:'Applications',icon:'file-text',href:'/faculty/applications'},
 {label:'New application',icon:'plus-circle',href:'/faculty/applications/new'},{label:'Projects',icon:'folder-kanban',href:'/faculty/projects'}], user, institutionName:'IEM-UEM Grant Office'}) %>
 <%- include('../partials/breadcrumbs',{items:[{label:'Faculty'},{label:'Dashboard'}]}) %>
-<div class="page-head"><div><h1>Good afternoon, Dr. Sen.</h1><p>Here is the current status of your grant portfolio.</p></div><div class="actions"><a class="btn btn-primary" href="/faculty/applications/new"><i data-lucide="plus"></i> New application</a></div></div>
+<div class="page-head"><div><h1 id="faculty-greeting">Good day</h1><p>Here is the current status of your grant portfolio.</p></div><div class="actions"><a class="btn btn-primary" href="/faculty/applications/new"><i data-lucide="plus"></i> New application</a></div></div>
 <div class="grid grid-4">
-  <div class="card stat"><div class="stat-icon"><i data-lucide="files"></i></div><div class="stat-label">Total applications</div><div class="stat-value">8</div><div class="stat-note">2 drafts in progress</div></div>
-  <div class="card stat"><div class="stat-icon"><i data-lucide="clock-3"></i></div><div class="stat-label">Under review</div><div class="stat-value">2</div><div class="stat-note">1 awaiting reviewer</div></div>
-  <div class="card stat"><div class="stat-icon"><i data-lucide="badge-check"></i></div><div class="stat-label">Approved</div><div class="stat-value">3</div><div class="stat-note">₹38.50 lakh granted</div></div>
-  <div class="card stat"><div class="stat-icon"><i data-lucide="calendar-clock"></i></div><div class="stat-label">Reports due</div><div class="stat-value">1</div><div class="stat-note">Due 30 Sep 2026</div></div>
+  <div class="card stat"><div class="stat-icon"><i data-lucide="files"></i></div><div class="stat-label">Total applications</div><div class="stat-value">0</div><div class="stat-note">Submissions</div></div>
+  <div class="card stat"><div class="stat-icon"><i data-lucide="clock-3"></i></div><div class="stat-label">Under review</div><div class="stat-value">0</div><div class="stat-note">In assessment</div></div>
+  <div class="card stat"><div class="stat-icon"><i data-lucide="badge-check"></i></div><div class="stat-label">Approved</div><div class="stat-value">0</div><div class="stat-note">Grants awarded</div></div>
+  <div class="card stat"><div class="stat-icon"><i data-lucide="calendar-clock"></i></div><div class="stat-label">Completed</div><div class="stat-value">0</div><div class="stat-note">Cycle status</div></div>
 </div>
 <div class="kpi-row" style="margin-top:16px">
-  <div class="card"><div class="section-title"><h3>Recent applications</h3><a href="/faculty/applications" class="small">View all</a></div><div class="table-wrap"><table class="table"><thead><tr><th>Application</th><th>Category</th><th>Submitted</th><th>Status</th></tr></thead><tbody>
+  <div class="card"><div class="section-title"><h3>Recent applications</h3><a href="/faculty/applications" class="small">View all</a></div><div class="table-wrap"><table class="table"><thead><tr><th>Application</th><th>Category</th><th>Requested</th><th>Submitted</th><th>Status</th><th></th></tr></thead><tbody>
   <tr><td><a href="/faculty/applications/GA-2026-0142"><strong>Low-Cost Water Quality Sensor</strong></a><div class="muted small">GA-2026-0142</div></td><td>Product</td><td>12 Sep 2026</td><td><%- include('../partials/status',{status:'Under Review',statusClass:'status-review'}) %></td></tr>
   <tr><td><a href="/faculty/applications/GA-2026-0118"><strong>Urban Heat Mapping</strong></a><div class="muted small">GA-2026-0118</div></td><td>Research</td><td>02 Sep 2026</td><td><%- include('../partials/status',{status:'Review Completed',statusClass:'status-success'}) %></td></tr>
   <tr><td><a href="/faculty/applications/GA-2026-0087"><strong>Campus Mobility Pilot</strong></a><div class="muted small">GA-2026-0087</div></td><td>Startup</td><td>17 Aug 2026</td><td><%- include('../partials/status',{status:'Approved',statusClass:'status-approved'}) %></td></tr>

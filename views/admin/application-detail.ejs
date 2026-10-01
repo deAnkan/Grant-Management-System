@@ -1,16 +1,96 @@
 <%- include('../partials/shell-start',{title:'Admin Application Detail',navItems:[
 {label:'Dashboard',icon:'layout-dashboard',href:'/admin/dashboard'},{label:'Applications',icon:'files',href:'/admin/applications',active:true},{label:'Reviewers',icon:'users-round',href:'/admin/reviewers'},{label:'Projects',icon:'folder-kanban',href:'/admin/projects'}],user,institutionName:'University Grant Office'}) %>
-<%- include('../partials/breadcrumbs',{items:[{label:'Administration',href:'/admin/dashboard'},{label:'Applications',href:'/admin/applications'},{label:'GA-2026-0118'}]}) %>
-<div class="page-head"><div><div class="eyebrow">GA-2026-0118 · Research</div><h1>Urban Heat Mapping</h1><p>Dr. Ananya Sen · Environmental Engineering · Submitted 02 Sep 2026</p></div><%- include('../partials/status',{status:'Review Completed',statusClass:'status-success'}) %></div>
+<%- include('../partials/breadcrumbs',{items:[{label:'Administration',href:'/admin/dashboard'},{label:'Applications',href:'/admin/applications'},{label:'Detail'}]}) %>
+<div class="page-head">
+  <div>
+    <div class="eyebrow" id="admin-detail-eyebrow">Loading application...</div>
+    <h1 id="admin-detail-title">Loading proposal...</h1>
+    <p id="admin-detail-meta">Please wait...</p>
+  </div>
+  <div id="admin-detail-status-container"></div>
+</div>
 <div class="grid grid-2">
-<div class="grid" style="align-content:start"><div class="card"><div class="section-title"><h3>Application summary</h3></div><div class="card-pad"><p class="small">A research project to map urban heat islands using satellite imagery, mobile sensing, and neighborhood-level validation.</p><div class="grid grid-2" style="margin-top:16px"><div><div class="eyebrow">Requested</div><strong>₹14,20,000</strong></div><div><div class="eyebrow">Reviewer average</div><strong>8.7 / 10</strong></div></div></div></div>
-<div class="card"><div class="section-title"><h3>Reviewer assessment</h3></div><div class="card-pad"><div class="list"><div class="list-item"><span>Interview</span><strong>8.5</strong></div><div class="list-item"><span>Presentation</span><strong>8.9</strong></div><div class="list-item"><span>Average</span><strong>8.7</strong></div><div><div class="eyebrow">Remarks</div><p class="small" style="margin-top:5px">Strong methodology and clear institutional value. Budget assumptions should be monitored during procurement.</p></div></div></div></div></div>
-<aside class="card"><div class="section-title"><h3>Administrative actions</h3><span class="muted small">Changes are audited server-side</span></div><div class="card-pad"><div class="field"><label for="grant">Grant amount (INR)</label><input id="grant" class="input" value="1320000"></div><div class="field" style="margin-top:12px"><label for="start">Project valid from</label><input id="start" class="input" type="date" value="2026-10-01"></div><div class="field" style="margin-top:12px"><label for="end">Project valid through</label><input id="end" class="input" type="date" value="2027-09-30"></div>
-<div class="field" style="margin-top:12px"><label for="reviewer">Assigned reviewer</label><select id="reviewer" class="select"><option>Prof. S. Rao</option><option>Dr. R. Mukherjee</option><option>Unassigned</option></select></div>
-<div class="actions" style="margin-top:16px"><button class="btn btn-primary" style="flex:1" data-demo-action="Approval requested via PATCH /api/v1/admin/applications/:applicationId/approve">Approve grant</button><button class="btn btn-danger" style="flex:1" data-modal-open="reject-modal">Reject</button></div>
-<div class="actions" style="margin-top:8px"><button class="btn btn-secondary" style="flex:1" data-demo-action="Reviewer assignment requested.">Assign reviewer</button><button class="btn btn-ghost" style="flex:1" data-modal-open="revert-modal">Revert action</button></div>
-<div class="notice" style="margin-top:16px">No action is persisted by this template. Connect the buttons to the marked API contracts and enforce authorization on the server.</div>
-</div></aside></div>
-<div class="modal-backdrop" id="reject-modal"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h3>Reject application</h3><button class="icon-btn" data-modal-close aria-label="Close"><i data-lucide="x"></i></button></div><div class="modal-body"><div class="field"><label for="reason">Reason *</label><textarea id="reason" class="textarea" placeholder="Provide the formal administrative reason for rejection."></textarea><span class="help">This reason may be visible to the applicant according to institutional policy.</span></div><div class="actions" style="justify-content:flex-end;margin-top:16px"><button class="btn btn-secondary" data-modal-close>Cancel</button><button class="btn btn-danger" data-demo-action="Rejection requested via PATCH /api/v1/admin/applications/:applicationId/reject">Confirm rejection</button></div></div></div></div>
-<div class="modal-backdrop" id="revert-modal"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h3>Revert last action</h3><button class="icon-btn" data-modal-close aria-label="Close"><i data-lucide="x"></i></button></div><div class="modal-body"><p class="small">Reverting a workflow action should be restricted by backend policy and recorded in the audit trail.</p><div class="actions" style="justify-content:flex-end;margin-top:16px"><button class="btn btn-secondary" data-modal-close>Cancel</button><button class="btn btn-danger" data-demo-action="Revert requested via POST /api/v1/admin/applications/:applicationId/revert">Revert action</button></div></div></div></div>
+  <div class="grid" style="align-content:start">
+    <div class="card">
+      <div class="section-title"><h3>Application summary</h3></div>
+      <div class="card-pad">
+        <p id="admin-detail-synopsis" class="small muted">Loading synopsis...</p>
+        <div class="grid grid-2" style="margin-top:16px">
+          <div><div class="eyebrow">Requested</div><strong id="admin-detail-amount">—</strong></div>
+          <div><div class="eyebrow">Reviewer average</div><strong id="admin-detail-avg-score">—</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h3>Reviewer assessment</h3></div>
+      <div class="card-pad">
+        <div class="list" id="admin-detail-assessment">
+          <div class="muted small">No assessment submitted yet.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h3>Documents</h3></div>
+      <div class="card-pad list" id="admin-detail-documents-list">
+        <div class="muted small">Loading documents...</div>
+      </div>
+    </div>
+  </div>
+  <aside class="card">
+    <div class="section-title"><h3>Administrative actions</h3><span class="muted small">Changes are audited</span></div>
+    <div class="card-pad">
+      <div class="field">
+        <label for="admin-grant-amount">Grant amount (INR)</label>
+        <input id="admin-grant-amount" class="input" type="number" min="0" placeholder="Enter approved amount">
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label for="admin-reviewer-select">Assign reviewer</label>
+        <select id="admin-reviewer-select" class="select">
+          <option value="">Select a reviewer...</option>
+        </select>
+      </div>
+      <div class="actions" style="margin-top:16px">
+        <button id="admin-approve-grant-btn" class="btn btn-primary" style="flex:1" type="button">Approve grant</button>
+        <button class="btn btn-danger" style="flex:1" type="button" data-modal-open="reject-modal">Reject</button>
+      </div>
+      <div class="actions" style="margin-top:8px">
+        <button id="admin-assign-reviewer-btn" class="btn btn-secondary" style="flex:1" type="button">Assign reviewer</button>
+        <button class="btn btn-ghost" style="flex:1" type="button" data-modal-open="revert-modal">Revert action</button>
+      </div>
+    </div>
+  </aside>
+</div>
+<div class="modal-backdrop" id="reject-modal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3>Reject application</h3>
+      <button class="icon-btn" data-modal-close aria-label="Close"><i data-lucide="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="admin-reject-reason">Reason *</label>
+        <textarea id="admin-reject-reason" class="textarea" placeholder="Provide the administrative reason for rejection." required></textarea>
+      </div>
+      <div class="actions" style="justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-secondary" data-modal-close type="button">Cancel</button>
+        <button id="admin-confirm-reject-btn" class="btn btn-danger" type="button">Confirm rejection</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="revert-modal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3>Revert last action</h3>
+      <button class="icon-btn" data-modal-close aria-label="Close"><i data-lucide="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <p class="small">Reverting will roll back the application to its previous workflow stage.</p>
+      <div class="actions" style="justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-secondary" data-modal-close type="button">Cancel</button>
+        <button id="admin-confirm-revert-btn" class="btn btn-danger" type="button">Revert action</button>
+      </div>
+    </div>
+  </div>
+</div>
 <%- include('../partials/shell-end') %>

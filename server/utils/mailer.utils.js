@@ -324,7 +324,7 @@ export const sendProgressSubmissionNotificationAdmin = async (
             <p>${documentCount} document(s) submitted with this progress report.</p>
 
             <p style='margin-top:20px;'>
-                <a href='http://localhost:8000/api/v1/admin/applications/${applicationId}' 
+                <a href='${config.appBaseUrl}/admin/applications/${applicationId}' 
                    style='display:inline-block; padding:10px 20px; background-color:#1e40af; color:white; text-decoration:none; border-radius:4px;'>
                    View Application Details
                 </a>

@@ -49,8 +49,8 @@ export const streamMyNotifications = expressAsyncHandler(async (req, res) => {
       });
     }
 
-    const user = await User.findById(payload?._id).select("_id role");
-    if (!user) {
+    const user = await User.findById(payload?._id).select("_id role tokenVersion");
+    if (!user || payload.tokenVersion !== user.tokenVersion) {
       return res.status(constants.UNAUTHORIZED).json({
         success: false,
         message: "Unauthorized",

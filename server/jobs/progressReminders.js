@@ -21,20 +21,25 @@ const checkProgressReports = async () => {
     today.setHours(0, 0, 0, 0);
 
     for (const app of approvedApplications) {
+      if (!app.submittedBy?.email) continue;
+
       const approvalDate = new Date(app.grantApprovalDate);
       approvalDate.setHours(0, 0, 0, 0);
 
-      let monthsSinceApproval =
-        (today.getFullYear() - approvalDate.getFullYear()) * 12 +
-        (today.getMonth() - approvalDate.getMonth());
-
-      // Check if it's a 6-month interval
-      if (monthsSinceApproval > 0 && monthsSinceApproval % 6 === 0) {
+      // Check upcoming/due milestones at 6-month intervals
+      for (let k = 1; k <= 20; k += 1) {
         const dueDate = new Date(approvalDate);
-        dueDate.setMonth(dueDate.getMonth() + monthsSinceApproval);
+        dueDate.setMonth(dueDate.getMonth() + (k * 6));
+        dueDate.setHours(0, 0, 0, 0);
+
+        // If milestone is beyond project validity end date, skip further checks
+        if (app.projectValidityEndDate && dueDate > new Date(app.projectValidityEndDate)) {
+          break;
+        }
 
         const reminderDate = new Date(dueDate);
         reminderDate.setDate(reminderDate.getDate() - 7);
+        reminderDate.setHours(0, 0, 0, 0);
 
         // Send 1-week reminder
         if (today.getTime() === reminderDate.getTime()) {
@@ -94,6 +99,11 @@ const checkProgressReports = async () => {
               ":" +
               dueDate.toISOString().slice(0, 10),
           });
+        }
+
+        // Optimization: if reminderDate is already in the future, subsequent milestones are also in the future
+        if (reminderDate > today) {
+          break;
         }
       }
     }

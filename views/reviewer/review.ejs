@@ -1,11 +1,33 @@
 <%- include('../partials/shell-start',{title:'Review Application',navItems:[
 {label:'Dashboard',icon:'layout-dashboard',href:'/reviewer/dashboard'},{label:'Assigned applications',icon:'clipboard-check',href:'/reviewer/applications',active:true}],user,institutionName:'University Grant Office'}) %>
-<%- include('../partials/breadcrumbs',{items:[{label:'Reviewer',href:'/reviewer/dashboard'},{label:'Assigned applications',href:'/reviewer/applications'},{label:'GA-2026-0142'}]}) %>
-<div class="page-head"><div><div class="eyebrow">GA-2026-0142 · Product · Due 20 Sep 2026</div><h1>Low-Cost Water Quality Sensor</h1><p>Applicant: Dr. Ananya Sen · Environmental Engineering · Requested ₹8,40,000</p></div><%- include('../partials/status',{status:'Under Review',statusClass:'status-review'}) %></div>
-<div class="tabs"><button class="tab active">Application</button><button class="tab">Documents (4)</button><button class="tab">Prior activity</button></div>
+<%- include('../partials/breadcrumbs',{items:[{label:'Reviewer',href:'/reviewer/dashboard'},{label:'Assigned applications',href:'/reviewer/applications'},{label:'Review'}]}) %>
+<div class="page-head">
+  <div>
+    <div class="eyebrow" id="reviewer-eyebrow">Loading application...</div>
+    <h1 id="reviewer-title">Loading proposal...</h1>
+    <p id="reviewer-meta">Please wait...</p>
+  </div>
+  <div id="reviewer-status-container"></div>
+</div>
 <div class="grid grid-2" style="margin-top:16px">
-<div class="grid" style="align-content:start"><div class="card"><div class="section-title"><h3>Synopsis</h3></div><div class="card-pad"><p class="small">The project proposes a low-cost sensor platform for near-real-time monitoring of turbidity, pH, and conductivity in peri-urban water bodies. The team will validate the prototype against laboratory measurements and conduct a six-month field pilot.</p><div class="notice" style="margin-top:12px"><strong>Reviewer instruction</strong><br>Assess feasibility, expected impact, technical merit, and institutional relevance. Do not make administrative eligibility decisions.</div></div></div>
-<div class="card"><div class="section-title"><h3>Documents</h3></div><div class="card-pad list"><a class="list-item" href="#"><span>Project_Proposal.pdf</span><i data-lucide="external-link"></i></a><a class="list-item" href="#"><span>Budget.xlsx</span><i data-lucide="external-link"></i></a><a class="list-item" href="#"><span>Team_CV.pdf</span><i data-lucide="external-link"></i></a><a class="list-item" href="#"><span>Presentation.pdf</span><i data-lucide="external-link"></i></a></div></div></div>
+<div class="grid" style="align-content:start">
+  <div class="card">
+    <div class="section-title"><h3>Synopsis</h3></div>
+    <div class="card-pad">
+      <p id="reviewer-synopsis" class="small muted">Loading proposal synopsis...</p>
+      <div class="notice" style="margin-top:12px">
+        <strong>Reviewer instruction</strong><br>
+        Assess feasibility, expected impact, technical merit, and institutional relevance.
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-title"><h3>Documents</h3></div>
+    <div class="card-pad list" id="reviewer-documents-list">
+      <div class="muted small">Loading documents...</div>
+    </div>
+  </div>
+</div>
 <form id="review-form" class="card"><div class="section-title"><h3>Submit review</h3><span class="muted small">All scores required</span></div><div class="card-pad">
 <div class="form-grid"><div class="field"><label for="interview">Interview score (0–10) *</label><input id="interview" class="input" type="number" min="0" max="10" step=".1" placeholder="8.5" required></div><div class="field"><label for="presentation">Presentation score (0–10) *</label><input id="presentation" class="input" type="number" min="0" max="10" step=".1" placeholder="9.0" required></div><div class="field"><label for="average">Average score</label><input id="average" class="input" value="Auto-calculated by backend" disabled></div><div class="field"><label for="signature">Signature / reviewer confirmation *</label><input id="signature" class="input" placeholder="Type your full name" required></div><div class="field full"><label for="remarks">Remarks *</label><textarea id="remarks" class="textarea" minlength="20" placeholder="Provide concise evidence-based comments on strengths, risks, feasibility and recommendation." required></textarea></div></div>
 <div class="notice warning" style="margin-top:14px">Once submitted, the review may become read-only according to the institution's workflow rules.</div>
