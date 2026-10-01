@@ -1,0 +1,6 @@
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <% (items || []).forEach((item, i) => { %>
+    <% if(i) { %><span aria-hidden="true">/</span><% } %>
+    <% if(item.href && i < items.length-1) { %><a href="<%= item.href %>"><%= item.label %></a><% } else { %><span><%= item.label %></span><% } %>
+  <% }) %>
+</nav>

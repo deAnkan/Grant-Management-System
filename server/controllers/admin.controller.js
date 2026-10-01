@@ -1465,6 +1465,7 @@ export const changeUserRole = expressAsyncHandler(async (req, res) => {
     const oldRole = user.role;
 
     user.role = role;
+    user.tokenVersion = Number(user.tokenVersion || 0) + 1;
 
     await user.save({
       validateBeforeSave: false,

@@ -1,0 +1,20 @@
+<aside class="sidebar" data-sidebar aria-label="Primary navigation">
+  <div class="brand">
+    <div class="brand-mark">G</div><div><strong>Grant Office</strong><span>Institutional Research</span></div>
+  </div>
+  <div class="nav-section">Workspace</div>
+  <nav id="workspace-navigation">
+    <% (navItems || []).forEach(item => { %>
+      <a class="nav-link <%= item.active ? 'active' : '' %>" href="<%= item.href %>">
+        <i data-lucide="<%= item.icon %>"></i><span><%= item.label %></span>
+      </a>
+    <% }) %>
+  </nav>
+  <div class="nav-section">Account</div>
+  <a class="nav-link" href="/profile"><i data-lucide="user-round"></i><span>Profile</span></a>
+  <a class="nav-link" href="/notifications"><i data-lucide="bell"></i><span>Notifications</span></a>
+  <button class="nav-link nav-button" type="button" id="logout-button"><i data-lucide="log-out"></i><span>Sign out</span></button>
+  <div class="sidebar-footer">
+    <div class="user-mini"><div class="avatar"><%= (user?.initials || 'AD') %></div><div><strong><%= user?.name || 'A. User' %></strong><br><span><%= user?.roleLabel || 'Faculty' %></span></div></div>
+  </div>
+</aside>

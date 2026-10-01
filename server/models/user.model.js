@@ -42,11 +42,12 @@ const userSchema = new Schema(
       type: String,
       minlength: [8, "Password must be at least 8 characters long"],
     },
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
     resetPasswordToken: {
       type: String,
-    },
-    resetPasswordTokenRaw: {
-    type: String,
     },
     resetPasswordTokenExpiry: {
       type: Date,
@@ -54,6 +55,10 @@ const userSchema = new Schema(
     profileImage: {
       type: String,
       default: "https://cdn-icons-png.flaticon.com/512/9131/9131529.png",
+    },
+    profileImageKey: {
+      type: String,
+      default: null,
     },
   },
   { timestamps: true }
@@ -70,6 +75,7 @@ userSchema.pre("save", async function () {
     this.password = await bcrypt.hash(this.password, salt);
   } catch (error) {
     console.error(error);
+    throw error;
   }
 });
 
@@ -86,6 +92,7 @@ userSchema.methods.generateAccessToken = function () {
       email: this.email,
       fullName: this.fullName,
       role: this.role,
+      tokenVersion: this.tokenVersion,
     },
     config.accessTokenSecret,
     { expiresIn: config.accessTokenExpiry || "1d" } // Fallback to "1h" if the environment variable is not set
@@ -101,7 +108,6 @@ userSchema.methods.generatePasswordResetToken = function () {
     .update(resetToken)
     .digest("hex");
 
-  this.resetPasswordTokenRaw = resetToken;
   this.resetPasswordTokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
   return resetToken;

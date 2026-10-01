@@ -4,25 +4,25 @@ import { config } from "../constants.js";
 import User from "../models/user.model.js";
 import { sendUnauthorized, sendServerError } from "../utils/response.utils.js";
 
+const getVerifiedUser = async (req) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+
+  let payload;
+  try {
+    payload = jwt.verify(token, config.accessTokenSecret);
+  } catch {
+    return null;
+  }
+
+  const user = await User.findById(payload?._id).select("-password");
+  if (!user || payload.tokenVersion !== user.tokenVersion) return null;
+  return user;
+};
+
 export const verifyUser = expressAsyncHandler(async (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-
-    if (!token) {
-      return sendUnauthorized(res);
-    }
-
-    let verifiedInformation;
-
-    try {
-      verifiedInformation = jwt.verify(token, config.accessTokenSecret);
-    } catch (error) {
-      return sendUnauthorized(res);
-    }
-
-    const user = await User.findById(verifiedInformation?._id).select(
-      "-password",
-    );
+    const user = await getVerifiedUser(req);
 
     if (!user) {
       return sendUnauthorized(res);
@@ -37,23 +37,7 @@ export const verifyUser = expressAsyncHandler(async (req, res, next) => {
 
 export const verifyAdmin = expressAsyncHandler(async (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-
-    if (!token) {
-      return sendUnauthorized(res);
-    }
-
-    let verifiedInformation;
-
-    try {
-      verifiedInformation = jwt.verify(token, config.accessTokenSecret);
-    } catch (error) {
-      return sendUnauthorized(res);
-    }
-
-    const user = await User.findById(verifiedInformation?._id).select(
-      "-password",
-    );
+    const user = await getVerifiedUser(req);
 
     if (!user || user.role !== "admin") {
       return sendUnauthorized(res);
@@ -68,23 +52,7 @@ export const verifyAdmin = expressAsyncHandler(async (req, res, next) => {
 
 export const verifyFaculty = expressAsyncHandler(async (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-
-    if (!token) {
-      return sendUnauthorized(res);
-    }
-
-    let verifiedInformation;
-
-    try {
-      verifiedInformation = jwt.verify(token, config.accessTokenSecret);
-    } catch (error) {
-      return sendUnauthorized(res);
-    }
-
-    const user = await User.findById(verifiedInformation?._id).select(
-      "-password",
-    );
+    const user = await getVerifiedUser(req);
 
     if (!user || user.role !== "faculty") {
       return sendUnauthorized(res);
@@ -99,23 +67,7 @@ export const verifyFaculty = expressAsyncHandler(async (req, res, next) => {
 
 export const verifyReviewer = expressAsyncHandler(async (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-
-    if (!token) {
-      return sendUnauthorized(res);
-    }
-
-    let verifiedInformation;
-
-    try {
-      verifiedInformation = jwt.verify(token, config.accessTokenSecret);
-    } catch (error) {
-      return sendUnauthorized(res);
-    }
-
-    const user = await User.findById(verifiedInformation?._id).select(
-      "-password",
-    );
+    const user = await getVerifiedUser(req);
 
     if (!user || user.role !== "reviewer") {
       return sendUnauthorized(res);
@@ -131,22 +83,7 @@ export const verifyReviewer = expressAsyncHandler(async (req, res, next) => {
 export const verifyAdminOrFaculty = expressAsyncHandler(
   async (req, res, next) => {
     try {
-      const token = req.header("Authorization")?.replace("Bearer ", "");
-      if (!token) {
-        return sendUnauthorized(res);
-      }
-
-      let verifiedInformation;
-
-      try {
-        verifiedInformation = jwt.verify(token, config.accessTokenSecret);
-      } catch (error) {
-        return sendUnauthorized(res);
-      }
-
-      const user = await User.findById(verifiedInformation?._id).select(
-        "-password",
-      );
+      const user = await getVerifiedUser(req);
 
       if (!user || (user.role !== "admin" && user.role !== "faculty")) {
         return sendUnauthorized(res);

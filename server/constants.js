@@ -73,6 +73,8 @@ export const config = {
     resendFromEmail: String(process.env.RESEND_FROM_EMAIL),
     otpExpiryMinutes: Number(process.env.OTP_EXPIRY_MINUTES || 5),
     otpHashSecret: String(process.env.OTP_HASH_SECRET),
+    appBaseUrl: String(process.env.APP_BASE_URL || "http://localhost:8000").replace(/\/$/, ""),
+    bootstrapAdminSecret: String(process.env.BOOTSTRAP_ADMIN_SECRET || ""),
 
     reviewerLoginUrl: String(process.env.REVIEWER_LOGIN_URL || "https://grant-in-aid.iem.edu.in/auth/reviewer/login"),
     adminResetPasswordUrl: String(
@@ -89,4 +91,4 @@ export const config = {
     awsAccessKeyId: String(process.env.AWS_ACCESS_KEY_ID),
     awsSecretAccessKey: String(process.env.AWS_SECRET_ACCESS_KEY),
     s3BucketName: String(process.env.AWS_S3_BUCKET),
-}   
+}

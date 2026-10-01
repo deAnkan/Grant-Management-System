@@ -1,0 +1,10 @@
+<%- include('partials/shell-start',{title:'Notifications',navItems:[
+{label:'Dashboard',icon:'layout-dashboard',href:'/dashboard'},{label:'Notifications',icon:'bell',href:'/notifications',active:true}],user,institutionName:'IEM-UEM Grant Office'}) %>
+<%- include('partials/breadcrumbs',{items:[{label:'Notifications'}]}) %>
+<div class="page-head"><div><h1>Notifications</h1><p>Updates related to application workflow, reviews, approvals, and reports.</p></div><button id="mark-all-notifications" class="btn btn-secondary">Mark all as read</button></div>
+<div class="card"><div class="filters"><select class="select" style="max-width:150px"><option>All</option><option>Unread</option><option>Read</option></select><select class="select" style="max-width:180px"><option>All notification types</option><option>Application</option><option>Review</option><option>Project</option></select></div><div class="card-pad list">
+<div class="list-item"><div><strong class="small">Review completed</strong><div class="muted small">Urban Heat Mapping (GA-2026-0118) has a completed reviewer assessment.</div><div class="muted small">14 Sep 2026 · 16:42</div></div><span class="status status-info">Unread</span></div>
+<div class="list-item"><div><strong class="small">Reviewer assigned</strong><div class="muted small">Dr. R. Mukherjee was assigned to Low-Cost Water Quality Sensor.</div><div class="muted small">13 Sep 2026 · 10:18</div></div><span class="status status-info">Unread</span></div>
+<div class="list-item"><div><strong class="small">Progress report due</strong><div class="muted small">Campus Mobility Pilot report is due on 30 Sep 2026.</div><div class="muted small">12 Sep 2026 · 09:04</div></div><span class="status status-success">Read</span></div>
+</div></div>
+<%- include('partials/shell-end') %>

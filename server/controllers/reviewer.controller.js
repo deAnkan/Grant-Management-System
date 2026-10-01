@@ -249,9 +249,20 @@ export const getAssignedApplications = expressAsyncHandler(async (req, res) => {
       $or: [{ reviewer: req.user._id }, { reviewers: req.user._id }],
     };
     const status = String(req.query.status || "").trim();
+    const queryText = String(req.query.q || req.query.title || "").trim();
 
     if (status) {
       filter.status = status;
+    }
+
+    if (queryText) {
+      const escapedQuery = queryText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$and = [{
+        $or: [
+          { title: { $regex: escapedQuery, $options: "i" } },
+          { applicationId: { $regex: escapedQuery, $options: "i" } },
+        ],
+      }];
     }
 
     const [applications, total] = await Promise.all([

@@ -1,0 +1,14 @@
+<%- include('../partials/shell-start',{title:'Application Detail',navItems:[
+{label:'Dashboard',icon:'layout-dashboard',href:'/faculty/dashboard'},{label:'Applications',icon:'file-text',href:'/faculty/applications',active:true},{label:'New application',icon:'plus-circle',href:'/faculty/applications/new'},{label:'Projects',icon:'folder-kanban',href:'/faculty/projects'}],user,institutionName:'University Grant Office'}) %>
+<%- include('../partials/breadcrumbs',{items:[{label:'Faculty',href:'/faculty/dashboard'},{label:'Applications',href:'/faculty/applications'},{label:'GA-2026-0142'}]}) %>
+<div class="page-head"><div><div class="eyebrow">GA-2026-0142 · Product</div><h1>Low-Cost Water Quality Sensor</h1><p>Submitted 12 Sep 2026 by Dr. Ananya Sen, Department of Environmental Engineering.</p></div><%- include('../partials/status',{status:'Under Review',statusClass:'status-review'}) %></div>
+<div class="grid grid-2">
+<div class="card"><div class="section-title"><h3>Application timeline</h3></div><div class="card-pad timeline">
+<% [['Submitted','12 Sep 2026','Application submitted successfully.',true],['Initial Screening','13 Sep 2026','Eligibility and completeness screening passed.',true],['Sent to Reviewer','13 Sep 2026','Assigned to Dr. R. Mukherjee.',true],['Under Review','14 Sep 2026','Reviewer assessment is in progress.',true],['Review Completed','Pending','The reviewer has not submitted the final review yet.',false],['Decision','Pending','Administrative decision will appear here.',false]].forEach(x=>{ %>
+<div class="timeline-item <%= x[3]?'done':'' %>"><div class="timeline-dot"></div><div><h4><%= x[0] %></h4><p><%= x[1] %> · <%= x[2] %></p></div></div>
+<% }) %></div></div>
+<div class="grid" style="align-content:start">
+<div class="card"><div class="section-title"><h3>Summary</h3></div><div class="card-pad"><div class="list"><div class="list-item"><span class="muted small">Requested amount</span><strong>₹8,40,000</strong></div><div class="list-item"><span class="muted small">Category</span><strong>Product</strong></div><div class="list-item"><span class="muted small">Documents</span><strong>4 files</strong></div><div class="list-item"><span class="muted small">Reviewer</span><strong>Dr. R. Mukherjee</strong></div></div></div></div>
+<div class="card"><div class="section-title"><h3>Documents</h3></div><div class="card-pad list"><a class="list-item" href="#"><span>Project_Proposal.pdf</span><i data-lucide="download"></i></a><a class="list-item" href="#"><span>Budget.xlsx</span><i data-lucide="download"></i></a><a class="list-item" href="#"><span>Ethics_Note.pdf</span><i data-lucide="download"></i></a><a class="list-item" href="#"><span>CV_Team.pdf</span><i data-lucide="download"></i></a></div></div>
+</div></div>
+<%- include('../partials/shell-end') %>

@@ -1,0 +1,6 @@
+<%- include('../partials/shell-start',{title:'Funded Projects',navItems:[
+{label:'Dashboard',icon:'layout-dashboard',href:'/admin/dashboard'},{label:'Applications',icon:'files',href:'/admin/applications'},{label:'Reviewers',icon:'users-round',href:'/admin/reviewers'},{label:'Projects',icon:'folder-kanban',href:'/admin/projects',active:true}],user,institutionName:'University Grant Office'}) %>
+<%- include('../partials/breadcrumbs',{items:[{label:'Administration',href:'/admin/dashboard'},{label:'Projects'}]}) %>
+<div class="page-head"><div><h1>Funded projects</h1><p>View all approved grant applications and their project status.</p></div></div>
+<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Project</th><th>Faculty</th><th>Granted amount</th><th>Project status</th><th></th></tr></thead><tbody id="projects-table-body"><tr><td colspan="5" class="muted small">Loading funded projects...</td></tr></tbody></table></div></div>
+<%- include('../partials/shell-end') %>

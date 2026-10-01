@@ -1,0 +1,5 @@
+<%- include('../partials/shell-start',{title:'Projects',navItems:[],user,institutionName:'IEM-UEM Grant Office'}) %>
+<%- include('../partials/breadcrumbs',{items:[{label:'Faculty',href:'/faculty/dashboard'},{label:'Projects'}]}) %>
+<div class="page-head"><div><h1>Funded projects</h1><p>Monitor approved grants and submit progress reports.</p></div></div>
+<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Project</th><th>Granted amount</th><th>Validity</th><th>Project status</th><th></th></tr></thead><tbody id="projects-table-body"><tr><td colspan="5" class="muted small">Loading funded projects…</td></tr></tbody></table></div></div>
+<%- include('../partials/shell-end') %>

@@ -210,11 +210,12 @@ export const sendPasswordResetMail = async (email, fullName, resetUrl, role) => 
         "<p>Regards,<br/>Grant-in-Aid Committee</p>" +
         "</div>";
 
-    await sendMail(
-        email,
-        "Reset Your Password - Grant-in-Aid Portal",
-        html
-    );
+    return transporter.sendMail({
+        from: config.emailUser,
+        to: email,
+        subject: "Reset Your Password - Grant-in-Aid Portal",
+        html,
+    });
 };
 
 // Faculty submits a progress report - sends notification email to faculty

@@ -1,0 +1,96 @@
+<%- include('../partials/head', { title: 'Sign in' }) %>
+
+  <div class="auth">
+    <section class="auth-aside">
+      <div>
+        <div class="brand">
+          <div class="brand-mark">G</div>
+          <div>
+            <strong>Grant Office</strong>
+            <span>Institutional Research</span>
+          </div>
+        </div>
+
+        <div style="margin-top:18vh" class="auth-rule">
+          <h1>Grant-in-Aid Management System</h1>
+          <p>
+            A secure workspace for applications, reviews, approvals,
+            and funded project reporting.
+          </p>
+        </div>
+      </div>
+
+      <div class="small">
+        For authorized faculty, reviewers, and administrators.
+      </div>
+    </section>
+
+    <main class="auth-main">
+      <form id="login-form" class="auth-box">
+        <div class="eyebrow">Institutional access</div>
+        <h1 style="margin-top:6px">Sign in</h1>
+
+        <p class="muted small" style="margin-top:8px">
+          Use your password or receive a one-time verification code.
+        </p>
+
+        <div class="field" style="margin-top:22px">
+          <label for="identifier">Email or employee ID</label>
+
+          <input id="identifier" name="identifier" class="input" placeholder="name@institution.edu or EMP-1042"
+            autocomplete="username" required>
+        </div>
+
+        <div class="field" style="margin-top:14px">
+          <label for="password">Password <span class="muted small">(for password sign-in)</span></label>
+          <input id="password" name="password" type="password" class="input" autocomplete="current-password"
+            placeholder="Enter your password">
+        </div>
+
+        <fieldset style="border:0;padding:0;margin:18px 0">
+          <legend class="field label" style="font-size:12px;font-weight:700">
+            Choose your role
+          </legend>
+
+          <div class="role-grid">
+            <button type="button" class="role selected" data-role="faculty" aria-pressed="true">
+              <strong>Faculty</strong>
+              <span>Submit and track grants</span>
+            </button>
+
+            <button type="button" class="role" data-role="reviewer" aria-pressed="false">
+              <strong>Reviewer</strong>
+              <span>Evaluate assigned work</span>
+            </button>
+
+            <button type="button" class="role" data-role="admin" aria-pressed="false">
+              <strong>Administrator</strong>
+              <span>Manage the grant cycle</span>
+            </button>
+          </div>
+
+          <input type="hidden" name="role" value="faculty">
+        </fieldset>
+
+        <button class="btn btn-primary" style="width:100%" type="submit" data-login-method="password">
+          Sign in with password
+          <i data-lucide="arrow-right"></i>
+        </button>
+
+        <button class="btn btn-ghost" style="width:100%;margin-top:10px" type="submit" data-login-method="otp">
+          Continue with OTP
+        </button>
+
+        <p class="help" style="margin-top:14px">
+          New faculty member? <a href="/register">Create an account</a>
+        </p>
+
+        <p class="help" style="margin-top:8px">
+          By continuing, you confirm that you are an authorized institutional user.
+          <a href="/forgot-password">Forgot password?</a>
+        </p>
+      </form>
+    </main>
+  </div>
+
+  <%- include('../partials/end') %>

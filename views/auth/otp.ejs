@@ -1,0 +1,50 @@
+<%- include('../partials/head', { title: 'Verify OTP' }) %>
+
+  <div class="auth">
+    <section class="auth-aside">
+      <div>
+        <div class="brand">
+          <div class="brand-mark">G</div>
+          <div>
+            <strong>Grant Office</strong>
+            <span>Institutional Research</span>
+          </div>
+        </div>
+
+        <div style="margin-top:18vh" class="auth-rule">
+          <h1>Verify your identity.</h1>
+          <p>Enter the six-digit code sent to your institutional contact.</p>
+        </div>
+      </div>
+
+      <div class="small">Never share a verification code with another person.</div>
+    </section>
+
+    <main class="auth-main">
+      <form id="otp-form" class="auth-box">
+        <div class="eyebrow">Step 2 of 2</div>
+        <h1 style="margin-top:6px">Verify OTP</h1>
+
+        <p class="muted small">
+          Code sent to <strong id="otp-identifier">your registered email</strong>.
+          <a href="/login" class="btn btn-ghost" style="padding:0;min-height:auto">
+            Change
+          </a>
+        </p>
+
+        <div class="field" style="margin-top:22px">
+          <label for="otp">6-digit verification code</label>
+
+          <input id="otp" name="otp" class="input" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+            placeholder="000000" required>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;margin-top:16px" type="submit">
+          Verify and continue
+          <i data-lucide="shield-check"></i>
+        </button>
+      </form>
+    </main>
+  </div>
+
+  <%- include('../partials/end') %>

@@ -1,0 +1,32 @@
+<%- include('../partials/head', { title: 'Create account' }) %>
+
+<div class="auth">
+  <section class="auth-aside">
+    <div>
+      <div class="brand">
+        <div class="brand-mark">G</div>
+        <div><strong>Grant Office</strong><span>Institutional Research</span></div>
+      </div>
+      <div style="margin-top:18vh" class="auth-rule">
+        <h1>Create your faculty account.</h1>
+        <p>Register once, then sign in with a password or an email OTP.</p>
+      </div>
+    </div>
+  </section>
+
+  <main class="auth-main">
+    <form id="register-form" class="auth-box">
+      <div class="eyebrow">Faculty registration</div>
+      <h1 style="margin-top:6px">Create account</h1>
+      <div class="field" style="margin-top:22px"><label for="full-name">Full name</label><input id="full-name" class="input" required></div>
+      <div class="field" style="margin-top:14px"><label for="register-email">Institutional email</label><input id="register-email" type="email" class="input" autocomplete="email" required></div>
+      <div class="field" style="margin-top:14px"><label for="employee-id">Employee ID</label><input id="employee-id" class="input" required></div>
+      <div class="field" style="margin-top:14px"><label for="phone-no">Phone number <span class="muted small">(optional)</span></label><input id="phone-no" class="input" inputmode="numeric"></div>
+      <div class="field" style="margin-top:14px"><label for="register-password">Password</label><input id="register-password" type="password" class="input" autocomplete="new-password" minlength="8" required></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:20px" type="submit">Create account <i data-lucide="arrow-right"></i></button>
+      <p class="help" style="margin-top:14px">Already registered? <a href="/login">Sign in</a></p>
+    </form>
+  </main>
+</div>
+
+<%- include('../partials/end') %>

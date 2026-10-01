@@ -71,8 +71,8 @@ export const handleResetPassword = async (req, res, role) => {
     }
 
     user.password = password;
+    user.tokenVersion = Number(user.tokenVersion || 0) + 1;
     user.resetPasswordToken = undefined;
-    user.resetPasswordTokenRaw = undefined;
     user.resetPasswordTokenExpiry = undefined;
     await user.save();
 

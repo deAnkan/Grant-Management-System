@@ -1,0 +1,91 @@
+<%- include('../partials/shell-start',{ title:'New Application', navItems:[
+    {label:'Dashboard',icon:'layout-dashboard',href:'/faculty/dashboard'},
+    {label:'Applications',icon:'file-text',href:'/faculty/applications'},
+    {label:'New application',icon:'plus-circle',href:'/faculty/applications/new',active:true},
+    {label:'Projects',icon:'folder-kanban',href:'/faculty/projects'} ], user,
+    institutionName:'IEM-UEM Grant Office' }) %>
+
+    <%- include('../partials/breadcrumbs',{ items:[ {label:'Faculty',href:'/faculty/dashboard'},
+        {label:'Applications',href:'/faculty/applications'}, {label:'New application'} ] }) %>
+
+        <div class="page-head">
+            <div>
+                <h1>New grant application</h1>
+                <p>Complete all required fields and submit supporting documents.</p>
+            </div>
+
+            <span class="status status-draft">New</span>
+        </div>
+
+        <form id="application-form" class="card" enctype="multipart/form-data">
+            <div class="section-title">
+                <h3>Application details</h3>
+                <span class="muted small">Required fields marked *</span>
+            </div>
+
+            <div class="card-pad form-grid">
+                <div class="field full">
+                    <label for="title">Project title *</label>
+
+                    <input id="title" name="title" class="input" required maxlength="180"
+                        placeholder="Example: Low-Cost Water Quality Sensor">
+                </div>
+
+                <div class="field">
+                    <label for="category">Category *</label>
+
+                    <select id="category" name="category" class="select" required>
+                        <option value="">Select category</option>
+                        <option value="research">Research</option>
+                        <option value="product">Product</option>
+                        <option value="startup">Startup</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="amount">Requested amount (INR) *</label>
+
+                    <input id="amount" name="amountRequested" class="input" type="number" min="1" step="1000"
+                        placeholder="840000" required>
+                </div>
+
+                <div class="field full">
+                    <label for="synopsis">Project synopsis *</label>
+
+                    <textarea id="synopsis" name="synopsis" class="textarea" minlength="100" maxlength="3000"
+                        placeholder="Describe the problem, objectives, approach, expected outcomes, and institutional relevance."
+                        required></textarea>
+
+                    <small>Minimum 100 characters; maximum 3,000 characters.</small>
+                </div>
+
+                <div class="field full">
+                    <label for="documents">Supporting documents *</label>
+
+                    <div class="file-drop">
+                        <i data-lucide="upload-cloud" size="28"></i>
+                        <p><strong>Choose up to 5 files</strong></p>
+                        <p class="muted small">PDF, JPG, JPEG, or PNG — up to 5 files</p>
+
+                        <input data-file-input="file-list" id="documents" name="documents" type="file" multiple
+                            accept=".pdf,.jpg,.jpeg,.png" style="margin-top:8px" required>
+                    </div>
+
+                    <div class="file-list" id="file-list"></div>
+                </div>
+            </div>
+
+            <div class="section-title" style="justify-content:flex-end">
+                <div class="actions">
+                    <a class="btn btn-secondary" href="/faculty/applications">
+                        Cancel
+                    </a>
+
+                    <button type="submit" class="btn btn-primary">
+                        Submit application
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <%- include('../partials/shell-end') %>

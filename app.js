@@ -2,17 +2,29 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import mongoose from "mongoose";
 import path from "path";
 import fs from "fs";
 import connectDB from "./server/config/db.config.js";
 import { config } from "./server/constants.js";
+import { verifyAdmin } from "./server/middlewares/auth.middleware.js";
 
 import dns from "dns";
 
 
 const app = express();
+let server;
 
 dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]); // Set DNS servers to Google's and Cloudflare's public DNS
+
+// -----------------------
+// EJS frontend setup
+// -----------------------
+app.set("view engine", "ejs");
+app.set("views", path.join(process.cwd(), "views"));
+
+app.use(express.static(path.join(process.cwd(), "public")));
+
 // -----------------------
 // Create logs directory
 // -----------------------
@@ -59,7 +71,20 @@ app.use(morgan("dev"));
 // -----------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(helmet());
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "https://unpkg.com", "'unsafe-inline'"],
+                styleSrc: ["'self'", "'unsafe-inline'"],
+                imgSrc: ["'self'", "data:", "blob:", "https:"],
+                connectSrc: ["'self'"],
+                fontSrc: ["'self'", "https:"],
+            },
+        },
+    }),
+);
 
 // Allowed domains
 const allowedDomains = [
@@ -67,6 +92,10 @@ const allowedDomains = [
     "https://grant-in-aid.iem.edu.in", // for Deployed frontend URL
     "http://localhost:5173", // for development
     "http://localhost:5174", // for development
+    `http://localhost:${config.port}`, // EJS frontend served by this backend
+    `http://127.0.0.1:${config.port}`,
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
 ];
 app.use(
     cors({
@@ -86,12 +115,11 @@ app.use(
 
 connectDB()
     .then(() => {
-        app.listen(config.port, () =>
+        server = app.listen(config.port, () =>
             console.log(`Server running on port ${config.port}`),
         );
-        app.on("error", (error) => {
+        server.on("error", (error) => {
             console.error("Error on the server: ", error);
-            throw error;
         });
     })
     .catch((error) => console.log("MongoDB Connection Failed: ", error));
@@ -99,7 +127,7 @@ connectDB()
 // -----------------------
 // Health Check Route
 // -----------------------
-app.get("/", (req, res) => {
+app.get("/api/health", (req, res) => {
     return res.status(200).json({
         success: true,
         message: "The server is running fine 👍🏻- v1.0.0",
@@ -109,7 +137,7 @@ app.get("/", (req, res) => {
 // ----------------------------------------
 // Route to fetch last 100 lines of logs
 // ----------------------------------------
-app.get("/logs", (req, res) => {
+app.get("/logs", verifyAdmin, (req, res) => {
     const logFilePath = path.join(logDirectory, "access.log");
 
     // Read last 100 lines from the log file
@@ -131,7 +159,7 @@ app.get("/logs", (req, res) => {
 // ----------------------------------------
 // Route to fetch last 100 lines of console.logs
 // ----------------------------------------
-app.get("/console-logs", (req, res) => {
+app.get("/console-logs", verifyAdmin, (req, res) => {
     const logFilePath = path.join(logDirectory, "console.log");
 
     // Read last 100 lines from the log file
@@ -160,6 +188,7 @@ import reviewerRoutes from "./server/routes/reviewer.routes.js";
 import progressRouter from "./server/routes/progress.routes.js";
 import { scheduleProgressReminders } from "./server/jobs/progressReminders.js";
 import notificationRoutes from "./server/routes/notification.routes.js";
+import uiRoutes from "./server/routes/ui.routes.js";
 // ------------------------
 // Schedule background jobs
 // ------------------------
@@ -174,6 +203,8 @@ app.use("/api/v1/faculty", facultyRoutes);
 app.use("/api/v1/reviewer", reviewerRoutes);
 app.use("/api/v1/progress", progressRouter);
 app.use("/api/v1/notifications", notificationRoutes);
+// EJS frontend pages
+app.use("/", uiRoutes);
 // ------------------------
 // 404 route handler
 // ------------------------
@@ -204,7 +235,35 @@ const gracefulExit = (signal) => {
 // -----------------------
 // Handle OS Signals
 // -----------------------
-process.on("SIGINT", () => gracefulExit("SIGINT")); // Ctrl + C
-process.on("SIGTERM", () => gracefulExit("SIGTERM")); // Kill signal (Docker, PM2)
+let isShuttingDown = false;
+
+const gracefulExitAsync = async (signal) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.log(`\nReceived ${signal}. Shutting down gracefully...`);
+
+    try {
+        if (server) {
+            await new Promise((resolve, reject) => {
+                server.close((error) => (error ? reject(error) : resolve()));
+            });
+            console.log("Express server closed");
+        }
+
+        // Mongoose 8+ returns a promise; connection.close() no longer accepts callbacks.
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.connection.close();
+            console.log("MongoDB connection closed");
+        }
+
+        process.exit(0);
+    } catch (error) {
+        console.error("Error during graceful shutdown:", error);
+        process.exit(1);
+    }
+};
+
+process.on("SIGINT", () => gracefulExitAsync("SIGINT")); // Ctrl + C
+process.on("SIGTERM", () => gracefulExitAsync("SIGTERM")); // Kill signal (Docker, PM2)
 
 export default app;

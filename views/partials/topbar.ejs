@@ -1,0 +1,10 @@
+<header class="topbar">
+  <div class="topbar-left">
+    <button class="menu-toggle icon-btn" data-sidebar-toggle aria-label="Open navigation"><i data-lucide="menu"></i></button>
+    <span class="eyebrow"><%= institutionName || 'Institutional Grant Office' %></span>
+  </div>
+  <div class="topbar-actions">
+    <button class="icon-btn" style="position:relative" aria-label="Notifications" onclick="location.href='/notifications'"><i data-lucide="bell"></i><span class="badge-dot"></span></button>
+    <div class="avatar"><%= user?.initials || 'AD' %></div>
+  </div>
+</header>

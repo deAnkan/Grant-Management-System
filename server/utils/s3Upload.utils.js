@@ -92,3 +92,12 @@ export const generatePublicUrl = (key) => {
     throw new Error(`Failed to generate public URL: ${err.message}`);
   }
 };
+
+export const getFileObject = async (key) => {
+  if (!key) throw new Error("File key is required");
+
+  return s3Client.send(new GetObjectCommand({
+    Bucket: config.s3BucketName,
+    Key: key,
+  }));
+};
