@@ -64,6 +64,8 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
+userSchema.index({ role: 1, createdAt: -1 });
+
 // Hash the password before saving the user model
 userSchema.pre("save", async function () {
   if (!this.password) return;

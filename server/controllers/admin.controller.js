@@ -32,6 +32,10 @@ import {
   buildPagination,
   escapeRegex,
 } from "../utils/queryHelpers.js";
+import {
+  getReviewerIdStrings,
+  setAssignedReviewers,
+} from "../services/applicationReviewers.service.js";
 
 const getAssignedReviewerList = (application) => {
   if (Array.isArray(application?.reviewers) && application.reviewers.length > 0) {
@@ -196,7 +200,8 @@ export const searchApplicationsByTitleAdmin = expressAsyncHandler(async (req, re
       .populate("submittedBy", "fullName email employeeId")
       .populate("reviewer", "fullName email")
       .populate("reviewers", "fullName email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(200);
 
     return sendSuccess(
       res,
@@ -249,7 +254,9 @@ export const getAllApplications = expressAsyncHandler(async (req, res) => {
           $or: [{ fullName: safePattern }, { email: safePattern }],
         },
         "_id",
-      ).lean();
+      )
+        .limit(2000)
+        .lean();
 
       const matchedUserIds = matchedUsers.map((user) => user._id);
       baseFilter.$or = [
@@ -290,6 +297,7 @@ export const getAllApplications = expressAsyncHandler(async (req, res) => {
           .populate("reviewer", "fullName email")
           .populate("reviewers", "fullName email")
           .sort({ createdAt: -1 })
+          .limit(5000)
         : Application.find(filter)
           .populate("submittedBy", "fullName email employeeId")
           .populate("reviewer", "fullName email")
@@ -336,7 +344,7 @@ export const getAllApplications = expressAsyncHandler(async (req, res) => {
   }
 });
 
-// Admin views a single application
+// Admin views a single application (read-only; status changes require an explicit action)
 export const getApplicationByIdAdmin = expressAsyncHandler(async (req, res) => {
   try {
     const { applicationId } = req.params;
@@ -351,44 +359,12 @@ export const getApplicationByIdAdmin = expressAsyncHandler(async (req, res) => {
       return sendError(res, constants.NOT_FOUND, "Application not found");
     }
 
-    let statusAutoUpdated = false;
-
-    // Auto-move submitted applications to initial screening when admin views them
-    if (application.status === "submitted") {
-      application.status = "initialScreening";
-      application.reevaluationRequested = false;
-      await application.save();
-      try {
-        await createNotification({
-          recipientId: application.submittedBy?._id,
-          recipientRole: "faculty",
-          actorId: req.user._id,
-          type: "SCREENING_STARTED",
-          title: "Screening In Progress",
-          message:
-            'Your application "' +
-            application.title +
-            '" is now under initial screening.',
-          relatedApplicationId: application._id,
-          data: { status: application.status },
-          eventKey: "screening-started:" + String(application._id),
-        });
-      } catch (notificationError) {
-        console.error(
-          "Failed to create screening notification:",
-          notificationError,
-        );
-      }
-      statusAutoUpdated = true;
-    }
-
     return sendSuccess(
       res,
       constants.OK,
       "Application retrieved successfully",
       {
         application,
-        statusAutoUpdated,
       },
     );
   } catch (error) {
@@ -508,6 +484,7 @@ export const approveApplication = expressAsyncHandler(async (req, res) => {
 
     if (
       ![
+        "submitted",
         "initialScreening",
         "sentToReviewer",
         "underReview",
@@ -521,11 +498,7 @@ export const approveApplication = expressAsyncHandler(async (req, res) => {
       );
     }
 
-    const currentAssignedReviewerIds = [
-      ...(application.reviewers || []).map((id) => String(id)),
-      ...(application.reviewer ? [String(application.reviewer)] : []),
-    ];
-    const uniqueCurrentAssignedReviewerIds = [...new Set(currentAssignedReviewerIds)];
+    const uniqueCurrentAssignedReviewerIds = getReviewerIdStrings(application);
 
     const reviewerIdsToAdd = reviewerIds.filter(
       (id) => !uniqueCurrentAssignedReviewerIds.includes(id),
@@ -558,15 +531,14 @@ export const approveApplication = expressAsyncHandler(async (req, res) => {
       ...reviewerIdsToAdd,
     ];
 
-    if (application.status === "initialScreening") {
+    if (["submitted", "initialScreening"].includes(application.status)) {
       application.status = "sentToReviewer";
     } else if (application.status === "reviewCompleted") {
       // New reviewer assignment re-opens the review stage until they submit marks.
       application.status = "underReview";
     }
 
-    application.reviewers = mergedReviewerIds;
-    application.reviewer = mergedReviewerIds[0];
+    setAssignedReviewers(application, mergedReviewerIds);
     await application.save();
 
     try {
@@ -707,8 +679,7 @@ export const unassignReviewer = expressAsyncHandler(async (req, res) => {
       (id) => !reviewerIdsToRemove.includes(id),
     );
 
-    application.reviewers = remainingReviewerIds;
-    application.reviewer = remainingReviewerIds.length > 0 ? remainingReviewerIds[0] : undefined;
+    setAssignedReviewers(application, remainingReviewerIds);
     application.marks = (application.marks || []).filter(
       (mark) => !reviewerIdsToRemove.includes(String(mark?.evaluatedBy)),
     );
@@ -1222,7 +1193,7 @@ export const closeProject = expressAsyncHandler(async (req, res) => {
     if (!application.projectValidityStartDate && application.grantApprovalDate) {
       application.projectValidityStartDate = new Date(application.grantApprovalDate);
     }
-    application.projectValidityEndDate = closedAt;
+    // Keep the planned validity end date; projectClosedAt records the actual closure.
     await application.save();
 
     try {
@@ -1269,13 +1240,25 @@ export const revertApplicationAction = expressAsyncHandler(async (req, res) => {
     }
 
     let actionReverted = "";
-    const hasReviewerAssigned = getAssignedReviewerList(application).length > 0;
+    const hasReviewerAssigned = getReviewerIdStrings(application).length > 0;
 
     if (application.projectStatus === "closed") {
       application.projectStatus = "active";
       application.projectClosedAt = undefined;
       actionReverted = "Project closure reverted";
     } else if (application.status === "approved") {
+      const progressReportCount = await Progress.countDocuments({
+        applicationId: application._id,
+      });
+
+      if (progressReportCount > 0) {
+        return sendError(
+          res,
+          constants.VALIDATION_ERROR,
+          "Grant approval cannot be reverted after progress reports have been submitted",
+        );
+      }
+
       application.status = "reviewCompleted";
       application.grantedAmount = undefined;
       application.grantApprovalDate = undefined;
@@ -1300,8 +1283,7 @@ export const revertApplicationAction = expressAsyncHandler(async (req, res) => {
       actionReverted = "Under-review state reverted";
     } else if (application.status === "sentToReviewer") {
       application.status = "initialScreening";
-      application.reviewers = [];
-      application.reviewer = undefined;
+      setAssignedReviewers(application, []);
       application.marks = [];
       actionReverted = "Reviewer assignment reverted";
     } else if (application.status === "initialScreening") {
@@ -1358,7 +1340,8 @@ export const getAllReviewers = expressAsyncHandler(async (req, res) => {
   try {
     const reviewers = await User.find({ role: "reviewer" })
       .select("fullName email phoneNo employeeId createdAt")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(500);
 
     return sendSuccess(res, constants.OK, "Reviewers retrieved successfully", {
       reviewers,
@@ -1390,7 +1373,8 @@ export const getReviewerById = expressAsyncHandler(async (req, res) => {
         "_id title status amountRequested grantedAmount submittedBy createdAt",
       )
       .populate("submittedBy", "fullName email employeeId")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(200);
 
     return sendSuccess(res, constants.OK, "Reviewer retrieved successfully", {
       reviewer,

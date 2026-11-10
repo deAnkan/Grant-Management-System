@@ -1,46 +1,10 @@
-import nodemailer from "nodemailer";
-import { Resend } from "resend";
 import { config } from "../constants.js";
+import { deliverEmail, enqueueEmail } from "../services/email.service.js";
 
-const smtpTransporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: config.emailUser,
-        pass: config.emailPass,
-    },
-});
-
-const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
-
-const sendAuthMail = async ({ to, subject, html }) => {
-    if (config.mailProvider === "resend") {
-        if (!resend) {
-            throw new Error("RESEND_API_KEY is missing");
-        }
-
-        const { data, error } = await resend.emails.send({
-            from: config.resendFromEmail,
-            to: [to],
-            subject,
-            html,
-        });
-
-        if (error) {
-            throw new Error(error.message || "Failed to send email with Resend");
-        }
-
-        return data;
-    }
-
-    await smtpTransporter.sendMail({
-        from: config.emailUser,
-        to,
-        subject,
-        html,
-    });
-
-    return true;
-};
+// OTP emails are time-sensitive, so they are delivered immediately (and the
+// caller is told if delivery fails). Other account emails go through the outbox.
+const sendAuthMail = async ({ to, subject, html }) =>
+    deliverEmail({ to, subject, html });
 
 export async function sendLoginOtpMail(email, fullName, otp) {
     return sendAuthMail({
@@ -61,17 +25,22 @@ export async function sendRoleChangedMail(email, fullName, oldRole, newRole, cha
             newRole === "faculty" ? "Faculty" :
                 "Reviewer";
 
-    return sendAuthMail({
-        to: email,
-        subject: "Your role has been changed",
-        html:
-            "<p>Hello " + (fullName || "User") + ",</p>" +
-            "<p>Your role in the Grant-in-Aid portal has been changed by admin.</p>" +
-            "<p><strong>Previous role:</strong> " + oldRole + "</p>" +
-            "<p><strong>New role:</strong> " + roleLabel + "</p>" +
-            "<p><strong>Changed by:</strong> " + (changedByName || "Admin") + "</p>" +
-            "<p>You can now log in using your registered email, employee ID, and OTP.</p>" +
-            "<br/>" +
-            "<p>Regards,<br/>Grant-in-Aid Committee</p>",
-    });
+    try {
+        return await enqueueEmail({
+            to: email,
+            subject: "Your role has been changed",
+            html:
+                "<p>Hello " + (fullName || "User") + ",</p>" +
+                "<p>Your role in the Grant-in-Aid portal has been changed by admin.</p>" +
+                "<p><strong>Previous role:</strong> " + oldRole + "</p>" +
+                "<p><strong>New role:</strong> " + roleLabel + "</p>" +
+                "<p><strong>Changed by:</strong> " + (changedByName || "Admin") + "</p>" +
+                "<p>You can now log in using your registered email, employee ID, and OTP.</p>" +
+                "<br/>" +
+                "<p>Regards,<br/>Grant-in-Aid Committee</p>",
+        });
+    } catch (error) {
+        console.error("Failed to queue role change email:", error);
+        return null;
+    }
 }

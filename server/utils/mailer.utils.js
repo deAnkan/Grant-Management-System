@@ -1,26 +1,13 @@
-import nodemailer from "nodemailer";
 import { config } from "../constants.js";
-
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: config.emailUser,
-        pass: config.emailPass,
-    },
-});
+import { enqueueEmail } from "../services/email.service.js";
+import { generateSignedUrl, getKeyFromUrl } from "./s3Upload.utils.js";
 
 const sendMail = async (to, subject, html, attachments = []) => {
     try {
-        await transporter.sendMail({
-            from: config.emailUser,
-            to,
-            subject,
-            html,
-            attachments,
-        });
-        console.log("Email sent successfully");
+        await enqueueEmail({ to, subject, html, attachments });
     } catch (error) {
-        console.error("Error sending email:", error);
+        // Optional notification emails must never break the business action.
+        console.error("Failed to queue email:", error);
     }
 };
 
@@ -76,10 +63,27 @@ export const sendReviewerAssignmentMail = async (
 ) => {
     const documentUrls = applicationDetails.documentUrls || [];
 
-    const attachments = documentUrls.map((fileUrl, index) => ({
-        filename: getFileNameFromUrl(fileUrl, index),
-        path: fileUrl,
-    }));
+    // Attach short-lived signed URLs so delivery does not depend on the bucket
+    // being publicly readable (the UI itself still uses the stored public URLs).
+    const attachments = (
+        await Promise.all(
+            documentUrls.map(async (fileUrl, index) => {
+                const key = getKeyFromUrl(fileUrl);
+                if (!key) return null;
+
+                try {
+                    const signedUrl = await generateSignedUrl(key, 24 * 60 * 60);
+                    return {
+                        filename: getFileNameFromUrl(fileUrl, index),
+                        path: signedUrl,
+                    };
+                } catch (error) {
+                    console.error("Failed to sign document for email:", error.message);
+                    return null;
+                }
+            }),
+        )
+    ).filter(Boolean);
 
     const html =
         "<h3>Dear " + reviewerName + ",</h3>" +
@@ -210,8 +214,7 @@ export const sendPasswordResetMail = async (email, fullName, resetUrl, role) => 
         "<p>Regards,<br/>Grant-in-Aid Committee</p>" +
         "</div>";
 
-    return transporter.sendMail({
-        from: config.emailUser,
+    return enqueueEmail({
         to: email,
         subject: "Reset Your Password - Grant-in-Aid Portal",
         html,

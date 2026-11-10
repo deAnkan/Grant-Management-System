@@ -7,20 +7,35 @@ import {
 } from "../utils/response.utils.js";
 import Application from "../models/application.model.js";
 import Progress from "../models/progress.model.js";
-import { uploadFile, generatePublicUrl } from "../utils/s3Upload.utils.js";
+import { uploadFile, generatePublicUrl, deleteFilesByUrl } from "../utils/s3Upload.utils.js";
 import {
   createNotification,
   createNotificationsForRole,
 } from "../services/notification.service.js";
 
-// Anyone authenticated can fetch progress reports for an application
+// Progress reports contain financial data, so only the owning faculty member or
+// an admin may read them.
 export const getProgressReports = expressAsyncHandler(async (req, res) => {
   try {
     const { applicationId } = req.params;
 
-    const application = await Application.findById(applicationId);
+    const application = await Application.findById(applicationId).select(
+      "submittedBy",
+    );
     if (!application) {
       return sendError(res, constants.NOT_FOUND, "Application not found");
+    }
+
+    const isOwner =
+      String(application.submittedBy) === String(req.user._id);
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isAdmin) {
+      return sendError(
+        res,
+        constants.FORBIDDEN,
+        "You are not authorized to view progress for this application",
+      );
     }
 
     const reports = await Progress.find({ applicationId })
@@ -161,13 +176,38 @@ export const submitProgressReport = expressAsyncHandler(async (req, res) => {
     }
     const documentUrls = uploadedKeys.map((key) => generatePublicUrl(key));
 
-    const progress = await Progress.create({
-      applicationId,
-      submittedBy: req.user._id,
-      description,
-      amountSpent: parsedAmountSpent,
-      documentUrls,
-    });
+    let progress;
+    try {
+      progress = await Progress.create({
+        applicationId,
+        submittedBy: req.user._id,
+        description,
+        amountSpent: parsedAmountSpent,
+        documentUrls,
+      });
+    } catch (error) {
+      await deleteFilesByUrl(documentUrls);
+      throw error;
+    }
+
+    // Re-check the cumulative total after inserting. Two concurrent submissions
+    // can both pass the check above; the loser is rolled back here.
+    const finalSpendSummary = await Progress.aggregate([
+      { $match: { applicationId: application._id } },
+      { $group: { _id: null, totalSpent: { $sum: "$amountSpent" } } },
+    ]);
+    const finalTotalSpent = Number(finalSpendSummary?.[0]?.totalSpent || 0);
+
+    if (finalTotalSpent > Number(application.grantedAmount || 0)) {
+      await Progress.deleteOne({ _id: progress._id });
+      await deleteFilesByUrl(documentUrls);
+
+      return sendError(
+        res,
+        constants.CONFLICT,
+        "Another progress report was submitted at the same time and the remaining grant is insufficient. Please refresh and try again.",
+      );
+    }
 
     // Send email to faculty
     try {

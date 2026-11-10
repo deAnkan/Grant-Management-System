@@ -30,6 +30,8 @@ const progressSchema = new Schema(
     { timestamps: true }
 );
 
+progressSchema.index({ applicationId: 1, createdAt: -1 });
+
 const Progress = model("Progress", progressSchema);
 
 export default Progress;

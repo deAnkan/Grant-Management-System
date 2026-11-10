@@ -60,35 +60,110 @@ export const constants = {
     NETWORK_AUTHENTICATION_REQUIRED: 511,
 };
   
+const isProduction = process.env.NODE_ENV === "production";
+
+/**
+ * Read an environment variable without coercing missing values into the string
+ * "undefined". Missing/blank values return undefined.
+ */
+const readEnv = (name) => {
+    const value = process.env[name];
+    if (value === undefined || value === null) return undefined;
+    const trimmed = String(value).trim();
+    return trimmed === "" ? undefined : trimmed;
+};
+
+const envOr = (name, fallback) => readEnv(name) ?? fallback;
+
+const envNumber = (name, fallback) => {
+    const parsed = Number(readEnv(name));
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const defaultAppBaseUrl = isProduction
+    ? "https://grant-in-aid.iem.edu.in"
+    : "http://localhost:8000";
+
 export const config = {
-    port: String(process.env.PORT || 8000),
-    uri: String(process.env.MONGODB_URI),
-    accessTokenSecret: String(process.env.ACCESS_TOKEN_SECRET),
-    accessTokenExpiry: String(process.env.ACCESS_TOKEN_EXPIRY),
-    emailUser: String(process.env.EMAIL_USER),
-    emailPass: String(process.env.EMAIL_PASS),
-    mailProvider: String(process.env.MAIL_PROVIDER || "smtp").toLowerCase(),
+    isProduction,
+    port: envOr("PORT", "8000"),
+    uri: readEnv("MONGODB_URI"),
+    accessTokenSecret: readEnv("ACCESS_TOKEN_SECRET"),
+    accessTokenExpiry: envOr("ACCESS_TOKEN_EXPIRY", "1d"),
+    emailUser: readEnv("EMAIL_USER"),
+    emailPass: readEnv("EMAIL_PASS"),
+    mailProvider: envOr("MAIL_PROVIDER", "smtp").toLowerCase(),
 
-    resendApiKey: String(process.env.RESEND_API_KEY),
-    resendFromEmail: String(process.env.RESEND_FROM_EMAIL),
-    otpExpiryMinutes: Number(process.env.OTP_EXPIRY_MINUTES || 5),
-    otpHashSecret: String(process.env.OTP_HASH_SECRET),
-    appBaseUrl: String(process.env.APP_BASE_URL || "http://localhost:8000").replace(/\/$/, ""),
-    bootstrapAdminSecret: String(process.env.BOOTSTRAP_ADMIN_SECRET || ""),
+    resendApiKey: readEnv("RESEND_API_KEY"),
+    resendFromEmail: readEnv("RESEND_FROM_EMAIL"),
+    otpExpiryMinutes: envNumber("OTP_EXPIRY_MINUTES", 5),
+    otpHashSecret: readEnv("OTP_HASH_SECRET"),
+    appBaseUrl: envOr("APP_BASE_URL", defaultAppBaseUrl).replace(/\/$/, ""),
+    bootstrapAdminSecret: envOr("BOOTSTRAP_ADMIN_SECRET", ""),
 
-    reviewerLoginUrl: String(process.env.REVIEWER_LOGIN_URL || "https://grant-in-aid.iem.edu.in/auth/reviewer/login"),
-    adminResetPasswordUrl: String(
-    process.env.ADMIN_RESET_PASSWORD_URL || "http://localhost:5173/auth/superadmin/reset-password"
+    reviewerLoginUrl: envOr("REVIEWER_LOGIN_URL", "https://grant-in-aid.iem.edu.in/auth/reviewer/login"),
+    adminResetPasswordUrl: envOr(
+        "ADMIN_RESET_PASSWORD_URL",
+        "http://localhost:5173/auth/superadmin/reset-password",
     ),
-    facultyResetPasswordUrl: String(
-    process.env.FACULTY_RESET_PASSWORD_URL || "http://localhost:5173/auth/faculty/reset-password/REAL_TOKEN"
+    facultyResetPasswordUrl: envOr(
+        "FACULTY_RESET_PASSWORD_URL",
+        "http://localhost:5173/auth/faculty/reset-password/REAL_TOKEN",
     ),
-    reviewerResetPasswordUrl: String(
-    process.env.REVIEWER_RESET_PASSWORD_URL || "http://localhost:5173/auth/reviewer/reset-password/REAL_TOKEN"
+    reviewerResetPasswordUrl: envOr(
+        "REVIEWER_RESET_PASSWORD_URL",
+        "http://localhost:5173/auth/reviewer/reset-password/REAL_TOKEN",
     ),
-    
-    awsRegion: String(process.env.AWS_REGION),
-    awsAccessKeyId: String(process.env.AWS_ACCESS_KEY_ID),
-    awsSecretAccessKey: String(process.env.AWS_SECRET_ACCESS_KEY),
-    s3BucketName: String(process.env.AWS_S3_BUCKET),
-}
+
+    awsRegion: readEnv("AWS_REGION"),
+    awsAccessKeyId: readEnv("AWS_ACCESS_KEY_ID"),
+    awsSecretAccessKey: readEnv("AWS_SECRET_ACCESS_KEY"),
+    s3BucketName: readEnv("AWS_S3_BUCKET"),
+
+    // Deployment/operations
+    trustProxy: envOr("TRUST_PROXY", isProduction ? "1" : ""),
+    dnsServers: envOr("DNS_SERVERS", ""),
+    logMaxBytes: envNumber("LOG_MAX_BYTES", 10 * 1024 * 1024),
+    logMaxFiles: envNumber("LOG_MAX_FILES", 5),
+};
+
+const REQUIRED_ALWAYS = ["MONGODB_URI", "ACCESS_TOKEN_SECRET"];
+
+const REQUIRED_IN_PRODUCTION = [
+    "OTP_HASH_SECRET",
+    "APP_BASE_URL",
+    "AWS_REGION",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_S3_BUCKET",
+];
+
+const REQUIRED_MAIL_VARS =
+    config.mailProvider === "resend"
+        ? ["RESEND_API_KEY", "RESEND_FROM_EMAIL"]
+        : ["EMAIL_USER", "EMAIL_PASS"];
+
+/**
+ * Fail fast on missing configuration instead of silently using literal
+ * "undefined" values for secrets.
+ */
+export const validateConfig = () => {
+    const required = [...REQUIRED_ALWAYS];
+
+    if (config.isProduction) {
+        required.push(...REQUIRED_IN_PRODUCTION, ...REQUIRED_MAIL_VARS);
+    }
+
+    const missing = [...new Set(required.filter((name) => !readEnv(name)))];
+
+    if (missing.length > 0) {
+        throw new Error(
+            `Missing required environment variables: ${missing.join(", ")}. ` +
+                "Set them in .env (or GitHub Actions secrets) before starting the server.",
+        );
+    }
+
+    if (config.isProduction && readEnv("ACCESS_TOKEN_SECRET").length < 32) {
+        console.warn("⚠️ ACCESS_TOKEN_SECRET should be at least 32 characters long.");
+    }
+};

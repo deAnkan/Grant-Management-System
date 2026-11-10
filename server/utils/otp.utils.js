@@ -6,8 +6,12 @@ export function generateOtp() {
 }
 
 export function hashOtp(otp) {
+    // OTP_HASH_SECRET is mandatory in production (see validateConfig). In
+    // development fall back to the access-token secret so local OTP login works.
+    const secret = config.otpHashSecret || config.accessTokenSecret;
+
     return crypto
-        .createHmac("sha256", config.otpHashSecret)
+        .createHmac("sha256", secret)
         .update(String(otp))
         .digest("hex");
 }

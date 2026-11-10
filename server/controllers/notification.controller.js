@@ -1,8 +1,6 @@
 import expressAsyncHandler from "express-async-handler";
-import jwt from "jsonwebtoken";
 import { constants } from "../constants.js";
-import { config } from "../constants.js";
-import User from "../models/user.model.js";
+import { getVerifiedUser } from "../middlewares/auth.middleware.js";
 import {
   sendSuccess,
   sendError,
@@ -19,38 +17,10 @@ import {
   markAllNotificationsAsRead,
 } from "../services/notification.service.js";
 
-const extractToken = (req) => {
-  const headerToken = req.header("Authorization")?.replace("Bearer ", "");
-  if (headerToken) return headerToken;
-
-  const queryToken = String(req.query.token || "").trim();
-  if (queryToken) return queryToken;
-
-  return null;
-};
-
 export const streamMyNotifications = expressAsyncHandler(async (req, res) => {
   try {
-    const token = extractToken(req);
-    if (!token) {
-      return res.status(constants.UNAUTHORIZED).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    let payload;
-    try {
-      payload = jwt.verify(token, config.accessTokenSecret);
-    } catch {
-      return res.status(constants.UNAUTHORIZED).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    const user = await User.findById(payload?._id).select("_id role tokenVersion");
-    if (!user || payload.tokenVersion !== user.tokenVersion) {
+    const user = await getVerifiedUser(req, { allowQueryToken: true });
+    if (!user) {
       return res.status(constants.UNAUTHORIZED).json({
         success: false,
         message: "Unauthorized",
@@ -71,14 +41,23 @@ export const streamMyNotifications = expressAsyncHandler(async (req, res) => {
     );
 
     const heartbeat = setInterval(() => {
-      res.write(": heartbeat\n\n");
+      if (!res.writableEnded) {
+        res.write(": heartbeat\n\n");
+      }
     }, 25000);
 
-    req.on("close", () => {
+    let cleanedUp = false;
+    const cleanup = () => {
+      if (cleanedUp) return;
+      cleanedUp = true;
       clearInterval(heartbeat);
       removeNotificationStreamClient(user._id, res);
-      res.end();
-    });
+      if (!res.writableEnded) res.end();
+    };
+
+    req.on("close", cleanup);
+    res.on("close", cleanup);
+    res.on("error", cleanup);
   } catch (error) {
     return sendServerError(res, error);
   }

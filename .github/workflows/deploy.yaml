@@ -39,10 +39,18 @@ jobs:
           # 4️⃣ Inject GitHub Secrets into .env
           cd /var/www/backend/folder
           cat <<EOF > .env
+          NODE_ENV=production
           PORT=$APP_PORT
           MONGODB_URI=${{ secrets.MONGODB_URI }}
           ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
           ACCESS_TOKEN_EXPIRY=${{ secrets.ACCESS_TOKEN_EXPIRY }}
+          APP_BASE_URL=${{ secrets.APP_BASE_URL }}
+          OTP_HASH_SECRET=${{ secrets.OTP_HASH_SECRET }}
+          BOOTSTRAP_ADMIN_SECRET=${{ secrets.BOOTSTRAP_ADMIN_SECRET }}
+          MAIL_PROVIDER=${{ secrets.MAIL_PROVIDER }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
+          TRUST_PROXY=1
           ADMIN_RESET_PASSWORD_URL=${{ secrets.ADMIN_RESET_PASSWORD_URL }}
           #ADMIN_PASS=${{ secrets.ADMIN_PASS }}
           EMAIL_USER=${{ secrets.EMAIL_USER }}
@@ -51,7 +59,6 @@ jobs:
           FACULTY_RESET_PASSWORD_URL=${{ secrets.FACULTY_RESET_PASSWORD_URL }}
           REVIEWER_LOGIN_URL=${{ secrets.REVIEWER_LOGIN_URL }}
           REVIEWER_RESET_PASSWORD_URL=${{ secrets.REVIEWER_RESET_PASSWORD_URL }}
-          SUPERADMIN_REGISTRATION_KEY=${{ secrets.SUPERADMIN_REGISTRATION_KEY }}
           #GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           #REFRESH_TOKEN_EXPIRY=${{ secrets.REFRESH_TOKEN_EXPIRY }}
           #REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
@@ -71,13 +78,26 @@ jobs:
           server {
               listen 80;
               server_name _;
+
+              # Allow up to 5 documents x 10 MB uploads
+              client_max_body_size 60m;
+
               location / {
                   proxy_pass http://localhost:$APP_PORT;
                   proxy_http_version 1.1;
                   proxy_set_header Upgrade \$http_upgrade;
                   proxy_set_header Connection 'upgrade';
                   proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
                   proxy_cache_bypass \$http_upgrade;
+
+                  # Server-Sent Events (/api/v1/notifications/stream)
+                  proxy_buffering off;
+                  proxy_cache off;
+                  proxy_read_timeout 3600s;
+                  proxy_send_timeout 3600s;
               }
           }
           EOF

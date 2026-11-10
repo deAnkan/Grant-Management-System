@@ -1,4 +1,5 @@
 import expressAsyncHandler from "express-async-handler";
+import crypto from "node:crypto";
 import { constants, config } from "../constants.js";
 import { sendSuccess, sendError, sendServerError } from "../utils/response.utils.js";
 import User from "../models/user.model.js";
@@ -100,10 +101,18 @@ export const register = expressAsyncHandler(async (req, res) => {
 // server has BOOTSTRAP_ADMIN_SECRET configured, and stops working after an admin exists.
 export const bootstrapAdmin = expressAsyncHandler(async (req, res) => {
     try {
-        const suppliedSecret = req.header("X-Bootstrap-Secret");
+        const suppliedSecret = String(req.header("X-Bootstrap-Secret") || "");
         const { email, fullName, employeeId, phoneNo, password } = req.body;
 
-        if (!config.bootstrapAdminSecret || suppliedSecret !== config.bootstrapAdminSecret) {
+        const secretMatches =
+            Boolean(config.bootstrapAdminSecret) &&
+            suppliedSecret.length === config.bootstrapAdminSecret.length &&
+            crypto.timingSafeEqual(
+                Buffer.from(suppliedSecret),
+                Buffer.from(config.bootstrapAdminSecret),
+            );
+
+        if (!secretMatches) {
             return sendError(res, constants.NOT_FOUND, "Route not found");
         }
 
@@ -321,9 +330,13 @@ export const verifyLoginOtp = expressAsyncHandler(async (req, res) => {
             return sendError(res, constants.UNAUTHORIZED, "Too many invalid OTP attempts");
         }
 
-        const incomingOtpHash = hashOtp(otp);
+        const incomingOtpHash = Buffer.from(hashOtp(otp));
+        const storedOtpHash = Buffer.from(loginOtp.otpHash || "");
+        const otpMatches =
+            incomingOtpHash.length === storedOtpHash.length &&
+            crypto.timingSafeEqual(incomingOtpHash, storedOtpHash);
 
-        if (incomingOtpHash !== loginOtp.otpHash) {
+        if (!otpMatches) {
             loginOtp.attempts += 1;
             await loginOtp.save({ validateBeforeSave: false });
 

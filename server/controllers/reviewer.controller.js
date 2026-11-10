@@ -10,6 +10,7 @@ import {
   sendReviewerCredentialsMail,
   sendPasswordResetMail,
 } from "../utils/mailer.utils.js";
+import { getReviewerIdStrings } from "../services/applicationReviewers.service.js";
 import User from "../models/user.model.js";
 import Application from "../models/application.model.js";
 import {
@@ -221,7 +222,8 @@ export const searchAssignedApplicationsByTitle = expressAsyncHandler(
         ],
       })
         .populate("submittedBy", "fullName email employeeId")
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .limit(200);
 
       return sendSuccess(
         res,
@@ -414,12 +416,7 @@ export const submitReview = expressAsyncHandler(async (req, res) => {
 
     const averageScore = Number(((iScore + pScore) / 2).toFixed(2));
 
-    const assignedReviewerIds =
-      application.reviewers?.length > 0
-        ? application.reviewers.map((id) => String(id))
-        : application.reviewer
-          ? [String(application.reviewer)]
-          : [];
+    const assignedReviewerIds = getReviewerIdStrings(application);
 
     let targetEvaluatorId = req.user._id;
     let targetEvaluatorRole = req.user.role;

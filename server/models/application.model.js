@@ -12,7 +12,7 @@ const getNextApplicationSequence = async (year) => {
     const counter = await Counter.findByIdAndUpdate(
         counterKey,
         { $inc: { seq: 1 } },
-        { new: true, upsert: true, setDefaultsOnInsert: true }
+        { returnDocument: "after", upsert: true, setDefaultsOnInsert: true }
     );
 
     return counter.seq;
@@ -191,8 +191,15 @@ const applicationSchema = new Schema(
             }
         ],
     },
-    { timestamps: true },
+    { timestamps: true, optimisticConcurrency: true },
 );
+
+// Indexes for the filters/sorts used by the admin, faculty and reviewer lists.
+applicationSchema.index({ status: 1, createdAt: -1 });
+applicationSchema.index({ submittedBy: 1, createdAt: -1 });
+applicationSchema.index({ reviewers: 1, createdAt: -1 });
+applicationSchema.index({ reviewer: 1, createdAt: -1 });
+applicationSchema.index({ status: 1, grantApprovalDate: 1, researchCompleted: 1 });
 
 applicationSchema.pre("validate", async function () {
     if (this.applicationId) {

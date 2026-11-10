@@ -7,7 +7,8 @@ import {
 } from "../utils/response.utils.js";
 import User from "../models/user.model.js";
 import Application from "../models/application.model.js";
-import { uploadFile, generatePublicUrl } from "../utils/s3Upload.utils.js";
+import { uploadFile, generatePublicUrl, deleteFilesByUrl } from "../utils/s3Upload.utils.js";
+import { setAssignedReviewers } from "../services/applicationReviewers.service.js";
 import {
   createNotification,
   createNotificationsForRole,
@@ -205,17 +206,23 @@ export const submitApplication = expressAsyncHandler(async (req, res) => {
       );
     }
 
-    const application = await Application.create({
-      title,
-      category: normalizedCategory,
-      amountRequested,
-      synopsis,
-      documentUrls: documentUrls,
-      submittedBy: req.user._id,
-      status: "submitted",
-      reevaluationRequested: false,
-      reevaluationRequestedAt: undefined,
-    });
+    let application;
+    try {
+      application = await Application.create({
+        title,
+        category: normalizedCategory,
+        amountRequested,
+        synopsis,
+        documentUrls: documentUrls,
+        submittedBy: req.user._id,
+        status: "submitted",
+        reevaluationRequested: false,
+        reevaluationRequestedAt: undefined,
+      });
+    } catch (error) {
+      await deleteFilesByUrl(documentUrls);
+      throw error;
+    }
 
     try {
       await createNotificationsForRole({
@@ -285,7 +292,9 @@ export const searchMyApplicationsByTitle = expressAsyncHandler(
           { title: { $regex: escapedQuery, $options: "i" } },
           { applicationId: { $regex: escapedQuery, $options: "i" } },
         ],
-      }).sort({ createdAt: -1 });
+      })
+        .sort({ createdAt: -1 })
+        .limit(200);
 
       return sendSuccess(
         res,
@@ -494,8 +503,7 @@ export const withdrawApplication = expressAsyncHandler(async (req, res) => {
     }
 
     application.status = "withdrawn";
-    application.reviewers = [];
-    application.reviewer = undefined;
+    setAssignedReviewers(application, []);
     application.marks = [];
     await application.save();
 
@@ -619,6 +627,7 @@ export const reopenWithdrawnApplication = expressAsyncHandler(async (req, res) =
       }
     }
 
+    const previousDocumentUrls = [...(application.documentUrls || [])];
     const uploadedKeys = [];
     for (const file of req.files || []) {
       const key = await uploadFile(file, "documents");
@@ -650,11 +659,21 @@ export const reopenWithdrawnApplication = expressAsyncHandler(async (req, res) =
     application.reevaluationRequested = false;
     application.reevaluationRequestedAt = undefined;
     application.comments = "";
-    application.reviewers = [];
-    application.reviewer = undefined;
+    setAssignedReviewers(application, []);
     application.marks = [];
 
-    await application.save();
+    try {
+      await application.save();
+    } catch (error) {
+      await deleteFilesByUrl(newDocumentUrls);
+      throw error;
+    }
+
+    if (newDocumentUrls.length > 0 && previousDocumentUrls.length > 0) {
+      deleteFilesByUrl(previousDocumentUrls).catch((error) =>
+        console.error("Failed to clean up replaced documents:", error),
+      );
+    }
 
     try {
       await createNotificationsForRole({
@@ -745,6 +764,7 @@ export const requestReevaluation = expressAsyncHandler(async (req, res) => {
       );
     }
 
+    const previousDocumentUrls = [...(application.documentUrls || [])];
     const uploadedKeys = [];
     for (const file of req.files || []) {
       const key = await uploadFile(file, "documents");
@@ -769,11 +789,21 @@ export const requestReevaluation = expressAsyncHandler(async (req, res) => {
     application.reevaluationRequested = true;
     application.reevaluationRequestedAt = new Date();
     application.comments = "";
-    application.reviewers = [];
-    application.reviewer = undefined;
+    setAssignedReviewers(application, []);
     application.marks = [];
 
-    await application.save();
+    try {
+      await application.save();
+    } catch (error) {
+      await deleteFilesByUrl(documentUrls);
+      throw error;
+    }
+
+    if (previousDocumentUrls.length > 0) {
+      deleteFilesByUrl(previousDocumentUrls).catch((error) =>
+        console.error("Failed to clean up replaced documents:", error),
+      );
+    }
 
     try {
       await createNotificationsForRole({

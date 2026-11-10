@@ -34,9 +34,15 @@ export function sendSuccess(res, statusCode, message, data = {}) {
    */
  export function sendServerError(res, error) {
     console.error("Internal Server Error:", error);
+
+    if (res.headersSent) return;
+
     res.status(constants.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Internal server error"
+          : error?.message || "Internal server error",
     });
   }
   

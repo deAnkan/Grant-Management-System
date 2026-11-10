@@ -4,8 +4,23 @@ import { config } from "../constants.js";
 import User from "../models/user.model.js";
 import { sendUnauthorized, sendServerError } from "../utils/response.utils.js";
 
-const getVerifiedUser = async (req) => {
-  const token = req.header("Authorization")?.replace("Bearer ", "");
+const extractToken = (req, allowQueryToken = false) => {
+  const header = req.header("Authorization");
+  if (header?.startsWith("Bearer ")) {
+    const headerToken = header.slice("Bearer ".length).trim();
+    if (headerToken) return headerToken;
+  }
+
+  if (allowQueryToken) {
+    const queryToken = String(req.query.token || "").trim();
+    if (queryToken) return queryToken;
+  }
+
+  return null;
+};
+
+export const getVerifiedUser = async (req, { allowQueryToken = false } = {}) => {
+  const token = extractToken(req, allowQueryToken);
   if (!token) return null;
 
   let payload;
